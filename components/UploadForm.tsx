@@ -21,6 +21,7 @@ const UploadForm = () => {
     control,
     handleSubmit,
     setValue,
+    resetField,
     watch,
     formState: { errors },
   } = useForm<BookUploadFormValues>({
@@ -77,7 +78,7 @@ const UploadForm = () => {
 
   const removePdf = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setValue("pdfFile", undefined, { shouldValidate: true });
+    resetField("pdfFile", { keepError: true });
     setPdfFileName(null);
     if (pdfInputRef.current) {
       pdfInputRef.current.value = "";
@@ -86,7 +87,7 @@ const UploadForm = () => {
 
   const removeCover = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setValue("coverImage", undefined, { shouldValidate: true });
+    resetField("coverImage");
     setCoverFileName(null);
     if (coverInputRef.current) {
       coverInputRef.current.value = "";
