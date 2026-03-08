@@ -3,30 +3,29 @@ import { connectToDatabase } from "@/database/mongoose";
 import { CreateBook, TextSegment } from "@/types";
 import { generateSlug, serializeData } from "../utils";
 import { Book } from "@/database/models/book.model";
-import { success } from "zod";
 import { BookSegment } from "@/database/models/book-segment.model";
 
 export const checkBookExists = async (title: string) => {
-    try {
-        await connectToDatabase();
+  try {
+    await connectToDatabase();
 
-        const slug = generateSlug(title);
+    const slug = generateSlug(title);
 
-        const existingBook = await Book.findOne({ slug }).lean();
+    const existingBook = await Book.findOne({ slug }).lean();
 
-        if (existingBook) {
-            return {
-                exists: true,
-                book: serializeData(existingBook)
-            }
-        }
-    } catch (e) {
-        console.error('Error checking book exists', e)
-        return {
-            exists: false,
-        }
+    if (existingBook) {
+      return {
+        exists: true,
+        book: serializeData(existingBook),
+      };
     }
-}
+  } catch (e) {
+    console.error("Error checking book exists", e);
+    return {
+      exists: false,
+    };
+  }
+};
 export const createBook = async (data: CreateBook) => {
   try {
     await connectToDatabase();
@@ -39,19 +38,38 @@ export const createBook = async (data: CreateBook) => {
       return {
         success: true,
         data: serializeData(existingBook),
-        alreadyExist: true,
+        alreadyExists: true,
       };
     }
+
+    const newBook = await Book.create({
+      clerkId: data.clerkId,
+      title: data.title,
+      author: data.author,
+      persona: data.persona,
+      fileURL: data.fileURL,
+      fileBlobKey: data.fileBlobKey,
+      coverURL: data.coverURL,
+      coverBlobKey: data.coverBlobKey,
+      fileSize: data.fileSize,
+      totalSegments: 0,
+      slug,
+    });
+
+    return {
+      success: true,
+      data: serializeData(newBook),
+      alreadyExists: false,
+    };
   } catch (error) {
     console.error("Error creating book:", error);
     return {
       success: false,
-      message: "Failed to create book",
+      error: "Failed to create book",
     };
   }
 };
-
-export const saveBookSegement = async (
+export const saveBookSegments = async (
   bookId: string,
   clerkId: string,
   segments: TextSegment[],
