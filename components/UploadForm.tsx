@@ -19,12 +19,11 @@ import { Button } from "@/components/ui/button";
 import {
   ACCEPTED_PDF_TYPES,
   ACCEPTED_IMAGE_TYPES,
-  DEFAULT_VOICE,
 } from "@/lib/constants";
 import FileUploader from "./FileUploader";
 import VoiceSelector from "./VoiceSelector";
 import LoadingOverlay from "./LoadingOverlay";
-import { useAuth, useUser } from "@clerk/nextjs";
+import { useAuth } from "@clerk/nextjs";
 import { toast } from "sonner";
 import {
   checkBookExists,
@@ -71,7 +70,7 @@ const UploadForm = () => {
       if (existsCheck && existsCheck.exists && existsCheck.book) {
         toast.info("Book with same title already exists.");
         form.reset();
-        router.push(`/books/${existsCheck.book.data.slug}`);
+        router.push(`/books/${existsCheck.book.slug}`);
         return;
       } else if (existsCheck && !existsCheck.exists) {
         // If book doesn't exist, continue with upload
@@ -90,13 +89,14 @@ const UploadForm = () => {
         return;
       }
 
-      const uploadedPdfBlob = await upload(fileTitle, pdfFile, {
+      const uploadedPdfBlob = await upload(`${fileTitle}.pdf`, pdfFile, {
         access: "public",
         handleUploadUrl: "/api/upload",
         contentType: "application/pdf",
       });
 
       let coverUrl: string;
+      let coverBlobKey: string;
 
       if (data.coverImage) {
         const coverFile = data.coverImage;
@@ -110,6 +110,7 @@ const UploadForm = () => {
           },
         );
         coverUrl = uploadedCoverBlob.url;
+        coverBlobKey = uploadedCoverBlob.pathname;
       } else {
         const response = await fetch(parsedPDF.cover);
         const blob = await response.blob();
@@ -120,6 +121,7 @@ const UploadForm = () => {
           contentType: "image/png",
         });
         coverUrl = uploadedCoverBlob.url;
+        coverBlobKey = uploadedCoverBlob.pathname;
       }
 
       const book = await createBook({
@@ -130,12 +132,13 @@ const UploadForm = () => {
         fileURL: uploadedPdfBlob.url,
         fileBlobKey: uploadedPdfBlob.pathname,
         coverURL: coverUrl,
+        coverBlobKey: coverBlobKey,
         fileSize: pdfFile.size,
       });
 
       if (!book.success) {
         toast.error((book.error as string) || "Failed to create book");
-        if (book.isBillingError) {
+        if ("isBillingError" in book && book.isBillingError) {
           router.push("/subscriptions");
         }
         return;

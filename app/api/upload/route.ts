@@ -7,7 +7,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     try {
         const body = (await request.json()) as HandleUploadBody;
 
-        const jsonResponsee = await handleUpload({
+        const jsonResponse = await handleUpload({
             token: process.env.BLOB_READ_WRITE_TOKEN,
             body,
             request,
@@ -24,19 +24,20 @@ export async function POST(request: Request): Promise<NextResponse> {
                 }
             },
             onUploadCompleted: async ({ blob, tokenPayload }) => {
-                console.log('Failed uploaded to blob:', blob.url)
+                console.log('Blob upload completed:', blob.url)
 
                 const payload = tokenPayload ? JSON.parse(tokenPayload) : null
                 const userId = payload?.userId;
+                console.log('User ID from payload:', userId);
             }
         });
 
-        return NextResponse.json(jsonResponsee)
+        return NextResponse.json(jsonResponse)
     } catch (e) {
-        const message = e instanceof Error ? e.message : "An unknow error occured";
+        console.error("Vercel Blob handleUpload error details:", e);
+        const message = e instanceof Error ? e.message : "An unknown error occurred";
         const status = message.includes("Unauthorized") ? 401 : 500;
-        console.error("Upload error", e);
         const clientMessage = status === 401 ? 'Unauthorized' : 'Upload failed';
-        return NextResponse.json({error: clientMessage}, {status})
+        return NextResponse.json({ error: clientMessage, details: message }, { status })
     }
 }
