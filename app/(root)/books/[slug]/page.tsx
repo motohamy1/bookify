@@ -1,10 +1,10 @@
 import { auth } from "@clerk/nextjs/server";
-import { getBookBySlug } from "@/lib/actions/book.actions";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, MicOff } from "lucide-react";
-import { getVoice } from "@/lib/utils";
+import { ArrowLeft, MicOff, Mic } from "lucide-react";
+
+import { getBookBySlug } from "@/lib/actions/book.actions";
 import VapiControls from "@/components/VapiControls";
 
 export default async function BookDetailsPage({
@@ -15,7 +15,7 @@ export default async function BookDetailsPage({
   const { userId } = await auth();
 
   if (!userId) {
-    return (await auth()).redirectToSignIn();
+    redirect("/sign-in");
   }
 
   const { slug } = await params;
@@ -26,7 +26,6 @@ export default async function BookDetailsPage({
   }
 
   const book = result.data;
-  const voiceName = getVoice(book.persona).name;
 
   return (
     <div className="book-page-container">
@@ -34,11 +33,7 @@ export default async function BookDetailsPage({
         <ArrowLeft className="size-6 text-[#212a3b]" />
       </Link>
 
-
-        {/* Transcript Area */}
-        <div className="vapi-transcript-wrapper w-full mt-6">
-          <VapiControls book={book} />
-        </div>
+      <VapiControls book={book} />
     </div>
   );
 }
