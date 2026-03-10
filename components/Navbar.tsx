@@ -7,8 +7,9 @@ import { ClerkProvider, SignedIn, SignedOut, SignInButton, UserButton } from '@c
 import React from 'react'
 
 const navItems = [
-    {href: '/', label: 'Liberary'},
-    {href: '/books/new', label: 'Add new'}
+    {href: '/', label: 'Library'},
+    {href: '/books/new', label: 'Add new'},
+    {href: '/subscriptions', label: 'Pricing'}
 ]
 
 const Navbar = () => {

@@ -29,19 +29,6 @@ const VAPI_API_KEY = process.env.NEXT_PUBLIC_VAPI_API_KEY;
 const TIMER_INTERVAL_MS = 1000;
 const SECONDS_PER_MINUTE = 60;
 
-let vapi: InstanceType<typeof Vapi>;
-function getVapi() {
-  if (!vapi) {
-    if (!VAPI_API_KEY) {
-      throw new Error(
-        "NEXT_PUBLIC_VAPI_API_KEY environment variable is not set",
-      );
-    }
-    vapi = new Vapi(VAPI_API_KEY);
-  }
-  return vapi;
-}
-
 export type CallStatus =
   | "idle"
   | "connecting"
@@ -62,10 +49,36 @@ export function useVapi(book: IBook) {
   const [limitError, setLimitError] = useState<string | null>(null);
   const [isBillingError, setIsBillingError] = useState(false);
 
+  const vapiRef = useRef<InstanceType<typeof Vapi> | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number | null>(null);
   const sessionIdRef = useRef<string | null>(null);
   const isStoppingRef = useRef(false);
+
+  const getVapi = useCallback(() => {
+    if (!vapiRef.current) {
+      if (!VAPI_API_KEY) {
+        throw new Error(
+          "NEXT_PUBLIC_VAPI_API_KEY environment variable is not set",
+        );
+      }
+      vapiRef.current = new Vapi(VAPI_API_KEY);
+    }
+    return vapiRef.current;
+  }, []);
+
+  const cleanupVapi = useCallback(() => {
+    if (vapiRef.current) {
+      try {
+        vapiRef.current.stop();
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+      vapiRef.current = null;
+    }
+  }, []);
+
+  const voice = book.persona || DEFAULT_VOICE;
 
   // Keep refs in sync with latest values for use in callbacks
   const maxDurationSeconds = limits?.maxDurationPerSession
@@ -73,7 +86,6 @@ export function useVapi(book: IBook) {
     : 15 * 60;
   const maxDurationRef = useLatestRef(maxDurationSeconds);
   const durationRef = useLatestRef(duration);
-  const voice = book.persona || DEFAULT_VOICE;
 
   // Set up Vapi event listeners
   useEffect(() => {
@@ -129,6 +141,9 @@ export function useVapi(book: IBook) {
         }
 
         startTimeRef.current = null;
+
+        // Reset Vapi instance for next call
+        cleanupVapi();
       },
 
       "speech-start": () => {
@@ -225,7 +240,7 @@ export function useVapi(book: IBook) {
         }
 
         // Show user-friendly error message
-        const errorMessage = error.message?.toLowerCase() || "";
+        const errorMessage = (error.message || error.toString() || "").toLowerCase();
         if (
           errorMessage.includes("timeout") ||
           errorMessage.includes("silence")
@@ -240,6 +255,14 @@ export function useVapi(book: IBook) {
           setLimitError(
             "Connection lost. Please check your internet and try again.",
           );
+        } else if (errorMessage.includes("meeting has ended") || errorMessage.includes("ejection")) {
+          setLimitError(
+            "Session ended. Click the mic to start again.",
+          );
+        } else if (errorMessage === "") {
+          setLimitError(
+            "Session ended. Click the mic to start again.",
+          );
         } else {
           setLimitError(
             "Session ended unexpectedly. Click the mic to start again.",
@@ -247,6 +270,9 @@ export function useVapi(book: IBook) {
         }
 
         startTimeRef.current = null;
+
+        // Reset Vapi instance for next call
+        cleanupVapi();
       },
     };
 
