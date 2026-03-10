@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Vapi from "@vapi-ai/web";
 import { useAuth } from "@clerk/nextjs";
 
-// import { useSubscription } from "@/hooks/useSubscription";
+import { usePlan } from "@/hooks/usePlan";
 import { ASSISTANT_ID, DEFAULT_VOICE, VOICE_SETTINGS } from "@/lib/constants";
 import { getVoice } from "@/lib/utils";
 import { IBook, Messages } from "@/types";
@@ -28,7 +28,6 @@ export function useLatestRef<T>(value: T) {
 const VAPI_API_KEY = process.env.NEXT_PUBLIC_VAPI_API_KEY;
 const TIMER_INTERVAL_MS = 1000;
 const SECONDS_PER_MINUTE = 60;
-const TIME_WARNING_THRESHOLD = 60; // Show warning when this many seconds remain
 
 let vapi: InstanceType<typeof Vapi>;
 function getVapi() {
@@ -53,7 +52,7 @@ export type CallStatus =
 
 export function useVapi(book: IBook) {
   const { userId } = useAuth();
-//   const { limits } = useSubscription();
+  const { limits } = usePlan();
 
   const [status, setStatus] = useState<CallStatus>("idle");
   const [messages, setMessages] = useState<Messages[]>([]);
@@ -103,6 +102,7 @@ export function useVapi(book: IBook) {
                   maxDurationRef.current / SECONDS_PER_MINUTE,
                 )} minutes) reached. Upgrade your plan for longer sessions.`,
               );
+              setIsBillingError(true);
             }
           }
         }, TIMER_INTERVAL_MS);
@@ -151,33 +151,19 @@ export function useVapi(book: IBook) {
       }) => {
         if (message.type !== "transcript") return;
 
-        // User finished speaking → AI is thinking
-        if (message.role === "user" && message.transcriptType === "final") {
-          if (!isStoppingRef.current) {
-            setStatus("thinking");
-          }
-          setCurrentUserMessage("");
-        }
-
-        // Partial user transcript → show real-time typing
+        // User partial → update live transcript
         if (message.role === "user" && message.transcriptType === "partial") {
           setCurrentUserMessage(message.transcript);
           return;
         }
 
-        // Partial AI transcript → show word-by-word
-        if (
-          message.role === "assistant" &&
-          message.transcriptType === "partial"
-        ) {
-          setCurrentMessage(message.transcript);
-          return;
-        }
+        // User final → clear streaming, set thinking, add to messages
+        if (message.role === "user" && message.transcriptType === "final") {
+          setCurrentUserMessage("");
 
-        // Final transcript → add to messages
-        if (message.transcriptType === "final") {
-          if (message.role === "assistant") setCurrentMessage("");
-          if (message.role === "user") setCurrentUserMessage("");
+          if (!isStoppingRef.current) {
+            setStatus("thinking");
+          }
 
           setMessages((prev) => {
             const isDupe = prev.some(
@@ -188,6 +174,32 @@ export function useVapi(book: IBook) {
               ? prev
               : [...prev, { role: message.role, content: message.transcript }];
           });
+          return;
+        }
+
+        // Assistant partial → update live transcript
+        if (
+          message.role === "assistant" &&
+          message.transcriptType === "partial"
+        ) {
+          setCurrentMessage(message.transcript);
+          return;
+        }
+
+        // Assistant final → clear streaming, add to messages
+        if (message.role === "assistant" && message.transcriptType === "final") {
+          setCurrentMessage("");
+
+          setMessages((prev) => {
+            const isDupe = prev.some(
+              (m) =>
+                m.role === message.role && m.content === message.transcript,
+            );
+            return isDupe
+              ? prev
+              : [...prev, { role: message.role, content: message.transcript }];
+          });
+          return;
         }
       },
 

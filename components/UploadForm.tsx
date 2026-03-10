@@ -16,10 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  ACCEPTED_PDF_TYPES,
-  ACCEPTED_IMAGE_TYPES,
-} from "@/lib/constants";
+import { ACCEPTED_PDF_TYPES, ACCEPTED_IMAGE_TYPES } from "@/lib/constants";
 import FileUploader from "./FileUploader";
 import VoiceSelector from "./VoiceSelector";
 import LoadingOverlay from "./LoadingOverlay";
@@ -170,7 +167,7 @@ const UploadForm = () => {
 
   return (
     <>
-      {isSubmitting && <LoadingOverlay />}
+      {isSubmitting && <LoadingOverlay isVisible={true} />}
 
       <div className="new-book-wrapper">
         <Form {...form}>

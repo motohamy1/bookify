@@ -5,8 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, MicOff } from "lucide-react";
 import { getVoice } from "@/lib/utils";
-import Transcript from "@/components/VabiControls";
-import VapiContorls from "@/components/VabiControls";
+import VapiControls from "@/components/VapiControls";
 
 export default async function BookDetailsPage({
   params,
@@ -38,7 +37,7 @@ export default async function BookDetailsPage({
 
         {/* Transcript Area */}
         <div className="vapi-transcript-wrapper w-full mt-6">
-          <VapiContorls book={book} />
+          <VapiControls book={book} />
         </div>
     </div>
   );

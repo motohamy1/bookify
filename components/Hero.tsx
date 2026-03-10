@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const steps = [
   {
@@ -39,13 +40,15 @@ export default function Hero() {
                 <br />
                 Listen, learn, and discuss your favorite reads.
               </p>
-              <Button
-                variant="outline"
-                className="bg-white border-gray-300 text-gray-900 hover:bg-gray-50 rounded-full px-6 py-5 text-base font-medium shadow-sm"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Add new book
-              </Button>
+              <Link href="/books/new">
+                <Button
+                  variant="outline"
+                  className="bg-white border-gray-300 text-gray-900 hover:bg-gray-50 rounded-full px-6 py-5 text-base font-medium shadow-sm cursor-pointer"
+                >
+                  <Plus className="w-5 h-5 mr-2" />
+                  Add new book
+                </Button>
+              </Link>
             </div>
 
             {/* Center Section - Illustration */}
