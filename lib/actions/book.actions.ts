@@ -35,7 +35,7 @@ export const getAllBooks = async (search?: string) => {
     console.error("Error connecting to database", e);
     return {
       success: false,
-      error: e,
+      error: e instanceof Error ? e.message : "Failed to fetch books",
     };
   }
 };
@@ -62,7 +62,7 @@ export const checkBookExists = async (title: string) => {
     console.error("Error checking book exists", e);
     return {
       exists: false,
-      error: e,
+      error: e instanceof Error ? e.message : "Failed to check book",
     };
   }
 };
@@ -120,7 +120,7 @@ export const createBook = async (data: CreateBook) => {
 
     return {
       success: false,
-      error: e,
+      error: e instanceof Error ? e.message : "Failed to create book",
     };
   }
 };
@@ -143,7 +143,7 @@ export const getBookBySlug = async (slug: string) => {
     console.error("Error fetching book by slug", e);
     return {
       success: false,
-      error: e,
+      error: e instanceof Error ? e.message : "Failed to fetch book",
     };
   }
 };
@@ -184,7 +184,7 @@ export const saveBookSegments = async (
 
     return {
       success: false,
-      error: e,
+      error: e instanceof Error ? e.message : "Failed to save segments",
     };
   }
 };

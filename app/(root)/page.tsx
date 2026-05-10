@@ -3,6 +3,8 @@ import BookCard from "@/components/BookCard";
 import { getAllBooks } from "@/lib/actions/book.actions";
 import Search from "@/components/Search";
 
+export const revalidate = 60;
+
 interface HomeProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
@@ -39,7 +41,7 @@ const Home = async ({ searchParams }: HomeProps) => {
         ) : (
           <div className="library-empty-card text-center py-20">
             <p className="text-xl font-medium text-[var(--text-secondary)]">
-              No books found matching "{searchQuery}"
+              No books found matching &ldquo;{searchQuery}&rdquo;
             </p>
           </div>
         )}
